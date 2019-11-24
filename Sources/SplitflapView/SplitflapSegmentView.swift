@@ -7,7 +7,7 @@
 
 import UIKit
 
-class FlapSegmentView: UIView {
+class SplitflapSegmentView: UIView {
     private let digitLabel = UILabel()
     private let mainLineView = UIView()
     private let secondaryLineView = UIView()
