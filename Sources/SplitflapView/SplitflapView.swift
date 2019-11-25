@@ -24,6 +24,10 @@ private let segmentDownwardRotationTransform: CATransform3D = {
     CATransform3DRotate(skewedIdentityTransform, .pi / 2, 1, 0, 0)
 }()
 
+enum FlipDirection {
+    case next, previous
+}
+
 public class SplitflapView: UIView {
     public enum Constants {
         public static let defaultAnimationDuration: TimeInterval = 0.4
@@ -39,7 +43,16 @@ public class SplitflapView: UIView {
     private let topSegmentView = SplitflapSegmentView(position: .top)
     private let bottomSegmentView = SplitflapSegmentView(position: .bottom)
 
+    private var animTopSegmentView: SplitflapSegmentView?
+    private var animBottomSegmentView: SplitflapSegmentView?
+
     private var currentIndex = -1
+
+    private var primaryAnimator: UIViewPropertyAnimator?
+    private var topSegmentAnimator: UIViewPropertyAnimator?
+    private var bottomSegmentAnimator: UIViewPropertyAnimator?
+    private var animationProgress: CGFloat = 0
+    private var flipAnimationDirection: FlipDirection = .next
 
     public init(tokens: [Character]) {
         self.tokens = tokens
@@ -72,11 +85,17 @@ public class SplitflapView: UIView {
         topSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
         bottomSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
 
-        let topSegmentTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(topSegmentTapped(_:)))
+        let topSegmentTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleTopTapGesture(_:)))
         topSegmentView.addGestureRecognizer(topSegmentTapGestureRecognizer)
 
-        let bottomSegmentTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(bottomSegmentTapped(_:)))
+        let bottomSegmentTapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleBottomTapGesture))
         bottomSegmentView.addGestureRecognizer(bottomSegmentTapGestureRecognizer)
+
+        let instantPanGestureRecognizer = InstantPanGestureRecognizer(target: self, action: #selector(handlePanGesture))
+        instantPanGestureRecognizer.maximumNumberOfTouches = 1
+        instantPanGestureRecognizer.require(toFail: topSegmentTapGestureRecognizer)
+        instantPanGestureRecognizer.require(toFail: bottomSegmentTapGestureRecognizer)
+        addGestureRecognizer(instantPanGestureRecognizer)
 
         if !tokens.isEmpty {
             nextToken(withDuration: .zero)
@@ -95,26 +114,90 @@ public class SplitflapView: UIView {
         currentIndex = index
     }
 
+    public func nextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
+        animateToNextToken(withDuration: duration)
+    }
+
+    public func previousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
+        animateToPreviousToken(withDuration: duration)
+    }
+
     // MARK: - Interactions
 
-    @objc private func topSegmentTapped(_ sender: UITapGestureRecognizer) {
+    @objc private func handleTopTapGesture(_ sender: UITapGestureRecognizer) {
         nextToken()
     }
 
-    @objc private func bottomSegmentTapped(_ sender: UITapGestureRecognizer) {
+    @objc private func handleBottomTapGesture(_ sender: UITapGestureRecognizer) {
         previousToken()
     }
 
-    // MARK: - Animating the Flap View
+    @objc private func handlePanGesture(_ sender: InstantPanGestureRecognizer) {
+        switch sender.state {
+        case .began:
+            didBeginPan(sender)
+        case .changed:
+            didChangePan(sender)
+        case .ended:
+            didEndPan(sender)
+        default:
+            break
+        }
+    }
 
-    var topSegmentAnimator: UIViewPropertyAnimator?
-    var bottomSegmentAnimator: UIViewPropertyAnimator?
-    var bottomShadowAnimator: UIViewPropertyAnimator?
+    private func didBeginPan(_ recognizer: InstantPanGestureRecognizer) {
+        guard !(primaryAnimator?.isRunning ?? false) else { return }
+
+        switch recognizer.velocity(in: self) {
+        case let velocity where velocity.y < 0: // swipe up
+            flipAnimationDirection = .previous
+            animateToPreviousToken(interactive: true)
+        case let velocity where velocity.y > 0: // swipe down
+            flipAnimationDirection = .next
+            animateToNextToken(interactive: true)
+        default:
+            return
+        }
+
+        animationProgress = primaryAnimator?.fractionComplete ?? 0
+    }
+
+    private func didChangePan(_ recognizer: InstantPanGestureRecognizer) {
+        guard primaryAnimator != nil else { return }
+
+        let translation = recognizer.translation(in: self)
+        let fraction: CGFloat = min(abs(translation.y) / bounds.height, 1.0)
+        let totalProgress = fraction + animationProgress
+        primaryAnimator?.fractionComplete = totalProgress
+
+        let stage1Progress = min(totalProgress, 0.5) * 2
+        let stage2Progress = max(totalProgress - 0.5, 0) * 2
+        topSegmentAnimator?.fractionComplete = flipAnimationDirection == .next ? stage1Progress : stage2Progress
+        bottomSegmentAnimator?.fractionComplete = flipAnimationDirection == .next ? stage2Progress : stage1Progress
+    }
+
+    private func didEndPan(_ recognizer: InstantPanGestureRecognizer) {
+        let overHalfWay = (primaryAnimator?.fractionComplete ?? 0.0) >= 0.5
+
+        if flipAnimationDirection == .next {
+            topSegmentAnimator?.startAnimation()
+            if overHalfWay {
+                bottomSegmentAnimator?.startAnimation()
+            }
+        } else {
+            bottomSegmentAnimator?.startAnimation()
+            if overHalfWay {
+                topSegmentAnimator?.startAnimation()
+            }
+        }
+
+        primaryAnimator?.startAnimation()
+    }
 
     // MARK: - Core Animation Logic
 
-    public func nextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
-        guard bottomShadowAnimator == nil, topSegmentAnimator == nil, bottomSegmentAnimator == nil else { return }
+    private func animateToNextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration, interactive: Bool = false) {
+        guard primaryAnimator == nil else { return }
 
         updateIndex(by: 1)
 
@@ -126,65 +209,76 @@ public class SplitflapView: UIView {
             return
         }
 
-        let animTopSegment = SplitflapSegmentView(position: .top)
-        let animBottomSegment = SplitflapSegmentView(position: .bottom)
+        let animTopSegmentView = SplitflapSegmentView(position: .top)
+        let animBottomSegmentView = SplitflapSegmentView(position: .bottom)
 
-        animTopSegment.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
-        animBottomSegment.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
-        animTopSegment.frame = topSegmentView.frame
-        animBottomSegment.frame = bottomSegmentView.frame
+        animTopSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
+        animBottomSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
+        animTopSegmentView.frame = topSegmentView.frame
+        animBottomSegmentView.frame = bottomSegmentView.frame
 
-        addSubview(animTopSegment)
-        addSubview(animBottomSegment)
+        self.animTopSegmentView = animTopSegmentView
+        self.animBottomSegmentView = animBottomSegmentView
 
-        animTopSegment.set(character: topSegmentView.token)
-        animBottomSegment.set(character: token)
+        addSubview(animTopSegmentView)
+        addSubview(animBottomSegmentView)
+
+        animTopSegmentView.set(character: topSegmentView.token)
+        animBottomSegmentView.set(character: token)
         topSegmentView.set(character: token)
 
-        animTopSegment.transform3D = skewedIdentityTransform
-        animBottomSegment.transform3D = segmentDownwardRotationTransform
+        animTopSegmentView.transform3D = skewedIdentityTransform
+        animBottomSegmentView.transform3D = segmentDownwardRotationTransform
         topSegmentView.shadow.alpha = .zero
         bottomSegmentView.shadow.alpha = .zero
 
         let flapAnimationDuration = duration / 2
 
-        bottomShadowAnimator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut, animations: {
+        primaryAnimator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut, animations: {
             self.bottomSegmentView.shadow.alpha = Constants.maxShadowAlpha
         })
-        bottomShadowAnimator?.addCompletion { _ in
+        primaryAnimator?.addCompletion { _ in
+            // Correct the view state
             self.bottomSegmentView.shadow.alpha = .zero
-            self.bottomShadowAnimator = nil
-        }
-        bottomShadowAnimator?.scrubsLinearly = false
-
-        topSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeIn, animations: {
-            animTopSegment.transform3D = segmentUpwardRotationTransform
-            animTopSegment.shadow.alpha = Constants.maxShadowAlpha / 2
-        })
-        topSegmentAnimator?.addCompletion { _ in
-            animTopSegment.removeFromSuperview()
-            self.topSegmentAnimator = nil
-            self.bottomSegmentAnimator?.startAnimation()
-        }
-        topSegmentAnimator?.scrubsLinearly = false
-
-        bottomSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeOut, animations: {
-            animBottomSegment.transform3D = skewedIdentityTransform
-        })
-        bottomSegmentAnimator?.addCompletion { _ in
             self.bottomSegmentView.set(character: token)
-            animBottomSegment.removeFromSuperview()
+
+            // Remove the animated views
+            self.animTopSegmentView?.removeFromSuperview()
+            self.animTopSegmentView = nil
+            self.animBottomSegmentView?.removeFromSuperview()
+            self.animBottomSegmentView = nil
+
+            // Clear the animators
+            self.primaryAnimator = nil
+            self.topSegmentAnimator = nil
             self.bottomSegmentAnimator = nil
         }
-        bottomSegmentAnimator?.scrubsLinearly = false
+
+        topSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeIn, animations: {
+            animTopSegmentView.transform3D = segmentUpwardRotationTransform
+            animTopSegmentView.shadow.alpha = Constants.maxShadowAlpha / 2
+        })
+        topSegmentAnimator?.addCompletion { _ in
+            self.bottomSegmentAnimator?.startAnimation()
+        }
+
+        bottomSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeOut, animations: {
+            animBottomSegmentView.transform3D = skewedIdentityTransform
+        })
 
         // Animate all the things that should start immediately
-        bottomShadowAnimator?.startAnimation()
-        topSegmentAnimator?.startAnimation()
+        if !interactive {
+            primaryAnimator?.startAnimation()
+            topSegmentAnimator?.startAnimation()
+        }
+
+        if let animator = primaryAnimator {
+            animationProgress = animator.fractionComplete
+        }
     }
 
-    public func previousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
-        guard bottomShadowAnimator == nil, topSegmentAnimator == nil, bottomSegmentAnimator == nil else { return }
+    private func animateToPreviousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration, interactive: Bool = false) {
+        guard primaryAnimator == nil else { return }
 
         updateIndex(by: -1)
 
@@ -196,60 +290,71 @@ public class SplitflapView: UIView {
             return
         }
 
-        let animTopSegment = SplitflapSegmentView(position: .top)
-        let animBottomSegment = SplitflapSegmentView(position: .bottom)
+        let animTopSegmentView = SplitflapSegmentView(position: .top)
+        let animBottomSegmentView = SplitflapSegmentView(position: .bottom)
 
-        animTopSegment.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
-        animBottomSegment.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
-        animTopSegment.frame = topSegmentView.frame
-        animBottomSegment.frame = bottomSegmentView.frame
+        animTopSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
+        animBottomSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
+        animTopSegmentView.frame = topSegmentView.frame
+        animBottomSegmentView.frame = bottomSegmentView.frame
 
-        addSubview(animTopSegment)
-        addSubview(animBottomSegment)
+        self.animTopSegmentView = animTopSegmentView
+        self.animBottomSegmentView = animBottomSegmentView
 
-        animTopSegment.set(character: token)
-        animBottomSegment.set(character: bottomSegmentView.token)
+        addSubview(animTopSegmentView)
+        addSubview(animBottomSegmentView)
+
+        animTopSegmentView.set(character: token)
+        animBottomSegmentView.set(character: bottomSegmentView.token)
         bottomSegmentView.set(character: token)
 
-        animTopSegment.transform3D = segmentUpwardRotationTransform
-        animTopSegment.shadow.alpha = Constants.maxShadowAlpha / 2
-        animBottomSegment.transform3D = skewedIdentityTransform
+        animTopSegmentView.transform3D = segmentUpwardRotationTransform
+        animTopSegmentView.shadow.alpha = Constants.maxShadowAlpha / 2
+        animBottomSegmentView.transform3D = skewedIdentityTransform
         bottomSegmentView.shadow.alpha = Constants.maxShadowAlpha
 
         let flapAnimationDuration = duration / 2
 
-        bottomShadowAnimator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut, animations: {
+        primaryAnimator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut, animations: {
             self.bottomSegmentView.shadow.alpha = .zero
         })
-        bottomShadowAnimator?.addCompletion { _ in
-            self.bottomShadowAnimator = nil
+        primaryAnimator?.addCompletion { _ in
+            // Correct the view state
+            self.topSegmentView.set(character: token)
+            self.bottomSegmentView.set(character: token)
+
+            // Remove the animated views
+            self.animTopSegmentView?.removeFromSuperview()
+            self.animTopSegmentView = nil
+            self.animBottomSegmentView?.removeFromSuperview()
+            self.animBottomSegmentView = nil
+
+            // Clear the animators
+            self.primaryAnimator = nil
+            self.topSegmentAnimator = nil
+            self.bottomSegmentAnimator = nil
         }
-        bottomShadowAnimator?.scrubsLinearly = false
 
         topSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeOut, animations: {
-            animTopSegment.transform3D = skewedIdentityTransform
-            animTopSegment.shadow.alpha = .zero
+            animTopSegmentView.transform3D = skewedIdentityTransform
+            animTopSegmentView.shadow.alpha = .zero
         })
-        topSegmentAnimator?.addCompletion { _ in
-            self.topSegmentView.set(character: token)
-            animTopSegment.removeFromSuperview()
-            self.topSegmentAnimator = nil
-        }
-        topSegmentAnimator?.scrubsLinearly = false
 
         bottomSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeIn, animations: {
-            animBottomSegment.transform3D = segmentDownwardRotationTransform
+            animBottomSegmentView.transform3D = segmentDownwardRotationTransform
         })
         bottomSegmentAnimator?.addCompletion { _ in
-            self.bottomSegmentView.set(character: token)
-            animBottomSegment.removeFromSuperview()
-            self.bottomSegmentAnimator = nil
             self.topSegmentAnimator?.startAnimation()
         }
-        bottomSegmentAnimator?.scrubsLinearly = false
 
         // Animate all the things that should start immediately
-        bottomShadowAnimator?.startAnimation()
-        bottomSegmentAnimator?.startAnimation()
+        if !interactive {
+            primaryAnimator?.startAnimation()
+            bottomSegmentAnimator?.startAnimation()
+        }
+
+        if let animator = primaryAnimator {
+            animationProgress = animator.fractionComplete
+        }
     }
 }
