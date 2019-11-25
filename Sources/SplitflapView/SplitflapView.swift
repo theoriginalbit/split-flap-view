@@ -45,7 +45,7 @@ open class SplitflapView: UIView {
         return tokens[currentIndex]
     }
 
-    open override var backgroundColor: UIColor? {
+    open var splitflapBackgroundColor: UIColor? {
         didSet {
             topSegmentView.backgroundColor = backgroundColor ?? .white
             bottomSegmentView.backgroundColor = backgroundColor ?? .white
