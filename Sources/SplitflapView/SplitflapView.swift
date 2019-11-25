@@ -51,7 +51,7 @@ open class SplitflapView: UIView {
     private var animTopSegmentView: SplitflapSegmentView?
     private var animBottomSegmentView: SplitflapSegmentView?
 
-    private var currentIndex = 0
+    private var currentIndex = -1
 
     private var primaryAnimator: UIViewPropertyAnimator?
     private var topSegmentAnimator: UIViewPropertyAnimator?
@@ -130,7 +130,9 @@ open class SplitflapView: UIView {
     }
 
     open func redrawToken() {
-        animateToNextToken()
+        let token = tokens[currentIndex]
+        topSegmentView.set(character: token)
+        bottomSegmentView.set(character: token)
     }
 
     // MARK: - Interactions
