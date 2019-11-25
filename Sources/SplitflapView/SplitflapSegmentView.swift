@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  SplitflapSegmentView.swift
 //
 //
 //  Created by Joshua Asbury on 25/11/19.
