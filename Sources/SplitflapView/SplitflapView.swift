@@ -37,6 +37,7 @@ open class SplitflapView: UIView {
     open var tokens: [Character] {
         didSet {
             currentIndex = min(currentIndex, tokens.count)
+            redrawToken()
         }
     }
 
@@ -50,7 +51,7 @@ open class SplitflapView: UIView {
     private var animTopSegmentView: SplitflapSegmentView?
     private var animBottomSegmentView: SplitflapSegmentView?
 
-    private var currentIndex = -1
+    private var currentIndex = 0
 
     private var primaryAnimator: UIViewPropertyAnimator?
     private var topSegmentAnimator: UIViewPropertyAnimator?
@@ -119,11 +120,17 @@ open class SplitflapView: UIView {
     }
 
     open func nextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
+        updateIndex(by: 1)
         animateToNextToken(withDuration: duration)
     }
 
     open func previousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
+        updateIndex(by: -1)
         animateToPreviousToken(withDuration: duration)
+    }
+
+    open func redrawToken() {
+        animateToNextToken()
     }
 
     // MARK: - Interactions
@@ -155,9 +162,11 @@ open class SplitflapView: UIView {
         switch recognizer.velocity(in: self) {
         case let velocity where velocity.y < 0: // swipe up
             flipAnimationDirection = .previous
+            updateIndex(by: -1)
             animateToPreviousToken(interactive: true)
         case let velocity where velocity.y > 0: // swipe down
             flipAnimationDirection = .next
+            updateIndex(by: 1)
             animateToNextToken(interactive: true)
         default:
             return
@@ -202,8 +211,6 @@ open class SplitflapView: UIView {
 
     private func animateToNextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration, interactive: Bool = false) {
         guard primaryAnimator == nil else { return }
-
-        updateIndex(by: 1)
 
         let token = tokens[currentIndex]
 
@@ -283,8 +290,6 @@ open class SplitflapView: UIView {
 
     private func animateToPreviousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration, interactive: Bool = false) {
         guard primaryAnimator == nil else { return }
-
-        updateIndex(by: -1)
 
         let token = tokens[currentIndex]
 
