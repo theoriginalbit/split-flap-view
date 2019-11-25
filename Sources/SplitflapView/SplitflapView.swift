@@ -49,6 +49,8 @@ open class SplitflapView: UIView {
         didSet {
             topSegmentView.backgroundColor = backgroundColor ?? .white
             bottomSegmentView.backgroundColor = backgroundColor ?? .white
+            animTopSegmentView?.backgroundColor = backgroundColor ?? .white
+            animBottomSegmentView?.backgroundColor = backgroundColor ?? .white
         }
     }
 
@@ -56,6 +58,8 @@ open class SplitflapView: UIView {
         didSet {
             topSegmentView.textColor = textColor
             bottomSegmentView.textColor = textColor
+            animTopSegmentView?.textColor = textColor
+            animBottomSegmentView?.textColor = textColor
         }
     }
 
@@ -63,6 +67,8 @@ open class SplitflapView: UIView {
         didSet {
             topSegmentView.flipPointColor = flipPointColor
             bottomSegmentView.flipPointColor = flipPointColor
+            animTopSegmentView?.flipPointColor = flipPointColor
+            animBottomSegmentView?.flipPointColor = flipPointColor
         }
     }
 
@@ -70,6 +76,8 @@ open class SplitflapView: UIView {
         didSet {
             topSegmentView.cornerRadius = cornerRadius
             bottomSegmentView.cornerRadius = cornerRadius
+            animTopSegmentView?.cornerRadius = cornerRadius
+            animBottomSegmentView?.cornerRadius = cornerRadius
         }
     }
 
@@ -77,6 +85,8 @@ open class SplitflapView: UIView {
         didSet {
             topSegmentView.flipPointHeightFactor = flipPointHeightFactor
             bottomSegmentView.flipPointHeightFactor = flipPointHeightFactor
+            animTopSegmentView?.flipPointHeightFactor = flipPointHeightFactor
+            animBottomSegmentView?.flipPointHeightFactor = flipPointHeightFactor
         }
     }
 
@@ -276,6 +286,18 @@ open class SplitflapView: UIView {
         let animTopSegmentView = SplitflapSegmentView(position: .top)
         let animBottomSegmentView = SplitflapSegmentView(position: .bottom)
 
+        animTopSegmentView.backgroundColor = topSegmentView.backgroundColor
+        animTopSegmentView.textColor = topSegmentView.textColor
+        animTopSegmentView.flipPointColor = topSegmentView.flipPointColor
+        animTopSegmentView.cornerRadius = topSegmentView.cornerRadius
+        animTopSegmentView.flipPointHeightFactor = topSegmentView.flipPointHeightFactor
+
+        animBottomSegmentView.backgroundColor = bottomSegmentView.backgroundColor
+        animBottomSegmentView.textColor = bottomSegmentView.textColor
+        animBottomSegmentView.flipPointColor = bottomSegmentView.flipPointColor
+        animBottomSegmentView.cornerRadius = bottomSegmentView.cornerRadius
+        animBottomSegmentView.flipPointHeightFactor = bottomSegmentView.flipPointHeightFactor
+
         animTopSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
         animBottomSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
         animTopSegmentView.frame = topSegmentView.frame
@@ -354,6 +376,18 @@ open class SplitflapView: UIView {
 
         let animTopSegmentView = SplitflapSegmentView(position: .top)
         let animBottomSegmentView = SplitflapSegmentView(position: .bottom)
+
+        animTopSegmentView.backgroundColor = topSegmentView.backgroundColor
+        animTopSegmentView.textColor = topSegmentView.textColor
+        animTopSegmentView.flipPointColor = topSegmentView.flipPointColor
+        animTopSegmentView.cornerRadius = topSegmentView.cornerRadius
+        animTopSegmentView.flipPointHeightFactor = topSegmentView.flipPointHeightFactor
+
+        animBottomSegmentView.backgroundColor = bottomSegmentView.backgroundColor
+        animBottomSegmentView.textColor = bottomSegmentView.textColor
+        animBottomSegmentView.flipPointColor = bottomSegmentView.flipPointColor
+        animBottomSegmentView.cornerRadius = bottomSegmentView.cornerRadius
+        animBottomSegmentView.flipPointHeightFactor = bottomSegmentView.flipPointHeightFactor
 
         animTopSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
         animBottomSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
