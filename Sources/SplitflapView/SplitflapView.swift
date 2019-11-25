@@ -47,10 +47,11 @@ open class SplitflapView: UIView {
 
     open var splitflapBackgroundColor: UIColor? {
         didSet {
-            topSegmentView.backgroundColor = backgroundColor ?? .white
-            bottomSegmentView.backgroundColor = backgroundColor ?? .white
-            animTopSegmentView?.backgroundColor = backgroundColor ?? .white
-            animBottomSegmentView?.backgroundColor = backgroundColor ?? .white
+            let color = splitflapBackgroundColor ?? .white
+            topSegmentView.backgroundColor = color
+            bottomSegmentView.backgroundColor = color
+            animTopSegmentView?.backgroundColor = color
+            animBottomSegmentView?.backgroundColor = color
         }
     }
 
