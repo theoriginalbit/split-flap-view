@@ -108,6 +108,9 @@ open class SplitflapView: UIView {
     }
 
     private func updateIndex(by value: Int) {
+        // Disallow index changes while animating
+        guard primaryAnimator == nil else { return }
+
         // wrapping bounds check
         var index = currentIndex + value
         if index < tokens.startIndex {
