@@ -39,6 +39,10 @@ public class SplitflapView: UIView {
             currentIndex = min(currentIndex, tokens.count)
         }
     }
+    
+    public var currentToken: Character {
+        return tokens[currentIndex]
+    }
 
     private let topSegmentView = SplitflapSegmentView(position: .top)
     private let bottomSegmentView = SplitflapSegmentView(position: .bottom)
