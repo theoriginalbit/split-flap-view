@@ -103,7 +103,7 @@ open class SplitflapView: UIView {
         addGestureRecognizer(instantPanGestureRecognizer)
 
         if !tokens.isEmpty {
-            nextToken(withDuration: .zero)
+            redrawToken()
         }
     }
 
