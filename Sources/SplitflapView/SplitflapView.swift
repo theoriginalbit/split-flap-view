@@ -66,7 +66,7 @@ open class SplitflapView: UIView {
         commonInit()
     }
 
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         tokens = []
 
         super.init(coder: coder)
