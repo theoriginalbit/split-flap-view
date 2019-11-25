@@ -28,19 +28,19 @@ enum FlipDirection {
     case next, previous
 }
 
-public class SplitflapView: UIView {
+open class SplitflapView: UIView {
     public enum Constants {
         public static let defaultAnimationDuration: TimeInterval = 0.4
         public static let maxShadowAlpha: CGFloat = 0.4
     }
 
-    public var tokens: [Character] {
+    open var tokens: [Character] {
         didSet {
             currentIndex = min(currentIndex, tokens.count)
         }
     }
-    
-    public var currentToken: Character {
+
+    open var currentToken: Character {
         return tokens[currentIndex]
     }
 
@@ -118,11 +118,11 @@ public class SplitflapView: UIView {
         currentIndex = index
     }
 
-    public func nextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
+    open func nextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
         animateToNextToken(withDuration: duration)
     }
 
-    public func previousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
+    open func previousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
         animateToPreviousToken(withDuration: duration)
     }
 
