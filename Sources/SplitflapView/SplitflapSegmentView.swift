@@ -20,18 +20,42 @@ class SplitflapSegmentView: UIView {
         return digitLabel.text!.first!
     }
 
-    private let cornerRadii: CGSize
+    var textColor: UIColor = .black {
+        didSet {
+            digitLabel.textColor = textColor
+        }
+    }
 
-    private var flipPointHeightFactor: CGFloat = 1.0
+    var flipPointColor: UIColor = .gray {
+        didSet {
+            mainLineView.backgroundColor = flipPointColor
+        }
+    }
+
+    var cornerRadius: CGFloat {
+        didSet {
+            setNeedsLayout()
+        }
+    }
+
+    var flipPointHeightFactor: CGFloat = 1.0 {
+        didSet {
+            setNeedsLayout()
+        }
+    }
+
+    private var cornerRadii: CGSize {
+        return CGSize(width: cornerRadius, height: cornerRadius)
+    }
 
     enum Position {
         case top
         case bottom
     }
 
-    init(position pos: Position, cornerRadius: CGFloat = 6.0) {
-        cornerRadii = CGSize(width: cornerRadius, height: cornerRadius)
-        position = pos
+    init(position: Position, cornerRadius: CGFloat = 6.0) {
+        self.cornerRadius = cornerRadius
+        self.position = position
 
         super.init(frame: .zero)
 
@@ -51,13 +75,13 @@ class SplitflapSegmentView: UIView {
         backgroundColor = .white
 
         digitLabel.textAlignment = .center
-        digitLabel.textColor = .black
+        digitLabel.textColor = textColor
         digitLabel.backgroundColor = .clear
         digitLabel.text = "0"
 
         addSubview(digitLabel)
 
-        mainLineView.backgroundColor = .gray
+        mainLineView.backgroundColor = flipPointColor
         secondaryLineView.backgroundColor = .clear
         addSubview(mainLineView)
         addSubview(secondaryLineView)

@@ -45,6 +45,34 @@ open class SplitflapView: UIView {
         return tokens[currentIndex]
     }
 
+    open var textColor: UIColor = .black {
+        didSet {
+            topSegmentView.textColor = textColor
+            bottomSegmentView.textColor = textColor
+        }
+    }
+
+    open var flipPointColor: UIColor = .gray {
+        didSet {
+            topSegmentView.flipPointColor = flipPointColor
+            bottomSegmentView.flipPointColor = flipPointColor
+        }
+    }
+
+    open var cornerRadius: CGFloat = 6.0 {
+        didSet {
+            topSegmentView.cornerRadius = cornerRadius
+            bottomSegmentView.cornerRadius = cornerRadius
+        }
+    }
+
+    open var flipPointHeightFactor: CGFloat = 1.0 {
+        didSet {
+            topSegmentView.flipPointHeightFactor = flipPointHeightFactor
+            bottomSegmentView.flipPointHeightFactor = flipPointHeightFactor
+        }
+    }
+
     private let topSegmentView = SplitflapSegmentView(position: .top)
     private let bottomSegmentView = SplitflapSegmentView(position: .bottom)
 
@@ -108,9 +136,6 @@ open class SplitflapView: UIView {
     }
 
     private func updateIndex(by value: Int) {
-        // Disallow index changes while animating
-        guard primaryAnimator == nil else { return }
-
         // wrapping bounds check
         var index = currentIndex + value
         if index < tokens.startIndex {
@@ -122,14 +147,24 @@ open class SplitflapView: UIView {
         currentIndex = index
     }
 
-    open func nextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
+    @discardableResult
+    open func nextToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) -> Bool {
+        // Disallow index changes while animating
+        guard primaryAnimator == nil else { return false }
+
         updateIndex(by: 1)
         animateToNextToken(withDuration: duration)
+        return true
     }
 
-    open func previousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) {
+    @discardableResult
+    open func previousToken(withDuration duration: TimeInterval = Constants.defaultAnimationDuration) -> Bool {
+        // Disallow index changes while animating
+        guard primaryAnimator == nil else { return false }
+
         updateIndex(by: -1)
         animateToPreviousToken(withDuration: duration)
+        return true
     }
 
     open func redrawToken() {
@@ -141,10 +176,16 @@ open class SplitflapView: UIView {
     // MARK: - Interactions
 
     @objc private func handleTopTapGesture(_ sender: UITapGestureRecognizer) {
+        // Disallow taps while animating
+        guard primaryAnimator == nil else { return }
+
         nextToken()
     }
 
     @objc private func handleBottomTapGesture(_ sender: UITapGestureRecognizer) {
+        // Disallow taps while animating
+        guard primaryAnimator == nil else { return }
+
         previousToken()
     }
 
