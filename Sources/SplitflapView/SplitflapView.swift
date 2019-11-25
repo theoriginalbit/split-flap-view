@@ -51,7 +51,7 @@ open class SplitflapView: UIView {
     private var animTopSegmentView: SplitflapSegmentView?
     private var animBottomSegmentView: SplitflapSegmentView?
 
-    private var currentIndex = -1
+    private var currentIndex = 0
 
     private var primaryAnimator: UIViewPropertyAnimator?
     private var topSegmentAnimator: UIViewPropertyAnimator?
