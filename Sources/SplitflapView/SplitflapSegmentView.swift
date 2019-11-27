@@ -8,10 +8,9 @@
 import UIKit
 
 class SplitflapSegmentView: UIView {
-    private let digitLabel = UILabel()
-    private let mainLineView = UIView()
-    private let secondaryLineView = UIView()
-
+    let digitLabel = UILabel()
+    let mainLineView = UIView()
+    let secondaryLineView = UIView()
     let shadow = UIView()
 
     let position: Position
@@ -20,25 +19,19 @@ class SplitflapSegmentView: UIView {
         return digitLabel.text!.first!
     }
 
-    var textColor: UIColor = .black {
-        didSet {
-            digitLabel.textColor = textColor
-        }
-    }
-
-    var flipPointColor: UIColor = .gray {
-        didSet {
-            mainLineView.backgroundColor = flipPointColor
-        }
-    }
-
-    var cornerRadius: CGFloat {
+    var cornerRadius: CGFloat = 6.0 {
         didSet {
             setNeedsLayout()
         }
     }
 
     var flipPointHeightFactor: CGFloat = 1.0 {
+        didSet {
+            setNeedsLayout()
+        }
+    }
+
+    var font: UIFont = UIFont(name: "Menlo", size: 20) ?? .systemFont(ofSize: 20) {
         didSet {
             setNeedsLayout()
         }
@@ -75,13 +68,13 @@ class SplitflapSegmentView: UIView {
         backgroundColor = .white
 
         digitLabel.textAlignment = .center
-        digitLabel.textColor = textColor
+        digitLabel.textColor = .black
         digitLabel.backgroundColor = .clear
         digitLabel.text = "0"
 
         addSubview(digitLabel)
 
-        mainLineView.backgroundColor = flipPointColor
+        mainLineView.backgroundColor = .gray
         secondaryLineView.backgroundColor = .clear
         addSubview(mainLineView)
         addSubview(secondaryLineView)
@@ -125,7 +118,7 @@ class SplitflapSegmentView: UIView {
         }
 
         digitLabel.frame = digitLabelFrame
-        digitLabel.font = UIFont(name: "Menlo", size: min(bounds.width, bounds.height) * 2 + (4 * flipPointHeightFactor))
+        digitLabel.font = font.withSize(min(bounds.width, bounds.height) * 2 + (4 * flipPointHeightFactor))
         shadow.frame = digitLabelFrame
         mainLineView.frame = mainLineViewFrame
         secondaryLineView.frame = secondaryLineViewFrame

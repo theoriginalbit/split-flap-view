@@ -46,48 +46,74 @@ open class SplitflapView: UIView {
     }
 
     open var splitflapBackgroundColor: UIColor? {
-        didSet {
-            let color = splitflapBackgroundColor ?? .white
-            topSegmentView.backgroundColor = color
-            bottomSegmentView.backgroundColor = color
-            animTopSegmentView?.backgroundColor = color
-            animBottomSegmentView?.backgroundColor = color
+        get {
+            return topSegmentView.backgroundColor
+        }
+        set {
+            topSegmentView.backgroundColor = newValue
+            bottomSegmentView.backgroundColor = newValue
+            animTopSegmentView?.backgroundColor = newValue
+            animBottomSegmentView?.backgroundColor = newValue
         }
     }
 
-    open var textColor: UIColor = .black {
-        didSet {
-            topSegmentView.textColor = textColor
-            bottomSegmentView.textColor = textColor
-            animTopSegmentView?.textColor = textColor
-            animBottomSegmentView?.textColor = textColor
+    open var textColor: UIColor {
+        get {
+            return topSegmentView.digitLabel.textColor
+        }
+        set {
+            topSegmentView.digitLabel.textColor = newValue
+            bottomSegmentView.digitLabel.textColor = newValue
+            animTopSegmentView?.digitLabel.textColor = newValue
+            animBottomSegmentView?.digitLabel.textColor = newValue
         }
     }
 
-    open var flipPointColor: UIColor = .gray {
-        didSet {
-            topSegmentView.flipPointColor = flipPointColor
-            bottomSegmentView.flipPointColor = flipPointColor
-            animTopSegmentView?.flipPointColor = flipPointColor
-            animBottomSegmentView?.flipPointColor = flipPointColor
+    open var flipPointColor: UIColor? {
+        get {
+            return topSegmentView.mainLineView.backgroundColor
+        }
+        set {
+            topSegmentView.mainLineView.backgroundColor = newValue
+            bottomSegmentView.mainLineView.backgroundColor = newValue
+            animTopSegmentView?.mainLineView.backgroundColor = newValue
+            animBottomSegmentView?.mainLineView.backgroundColor = newValue
         }
     }
 
-    open var cornerRadius: CGFloat = 6.0 {
-        didSet {
-            topSegmentView.cornerRadius = cornerRadius
-            bottomSegmentView.cornerRadius = cornerRadius
-            animTopSegmentView?.cornerRadius = cornerRadius
-            animBottomSegmentView?.cornerRadius = cornerRadius
+    open var cornerRadius: CGFloat {
+        get {
+            return topSegmentView.cornerRadius
+        }
+        set {
+            topSegmentView.cornerRadius = newValue
+            bottomSegmentView.cornerRadius = newValue
+            animTopSegmentView?.cornerRadius = newValue
+            animBottomSegmentView?.cornerRadius = newValue
         }
     }
 
-    open var flipPointHeightFactor: CGFloat = 1.0 {
-        didSet {
-            topSegmentView.flipPointHeightFactor = flipPointHeightFactor
-            bottomSegmentView.flipPointHeightFactor = flipPointHeightFactor
-            animTopSegmentView?.flipPointHeightFactor = flipPointHeightFactor
-            animBottomSegmentView?.flipPointHeightFactor = flipPointHeightFactor
+    open var flipPointHeightFactor: CGFloat {
+        get {
+            return topSegmentView.flipPointHeightFactor
+        }
+        set {
+            topSegmentView.flipPointHeightFactor = newValue
+            bottomSegmentView.flipPointHeightFactor = newValue
+            animTopSegmentView?.flipPointHeightFactor = newValue
+            animBottomSegmentView?.flipPointHeightFactor = newValue
+        }
+    }
+
+    open var font: UIFont {
+        get {
+            return topSegmentView.font
+        }
+        set {
+            topSegmentView.font = newValue
+            bottomSegmentView.font = newValue
+            animTopSegmentView?.font = newValue
+            animBottomSegmentView?.font = newValue
         }
     }
 
@@ -284,38 +310,15 @@ open class SplitflapView: UIView {
             return
         }
 
-        let animTopSegmentView = SplitflapSegmentView(position: .top)
-        let animBottomSegmentView = SplitflapSegmentView(position: .bottom)
+        animTopSegmentView = makeAnimatableSegmentView(position: .top)
+        animBottomSegmentView = makeAnimatableSegmentView(position: .bottom)
 
-        animTopSegmentView.backgroundColor = topSegmentView.backgroundColor
-        animTopSegmentView.textColor = topSegmentView.textColor
-        animTopSegmentView.flipPointColor = topSegmentView.flipPointColor
-        animTopSegmentView.cornerRadius = topSegmentView.cornerRadius
-        animTopSegmentView.flipPointHeightFactor = topSegmentView.flipPointHeightFactor
-
-        animBottomSegmentView.backgroundColor = bottomSegmentView.backgroundColor
-        animBottomSegmentView.textColor = bottomSegmentView.textColor
-        animBottomSegmentView.flipPointColor = bottomSegmentView.flipPointColor
-        animBottomSegmentView.cornerRadius = bottomSegmentView.cornerRadius
-        animBottomSegmentView.flipPointHeightFactor = bottomSegmentView.flipPointHeightFactor
-
-        animTopSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
-        animBottomSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
-        animTopSegmentView.frame = topSegmentView.frame
-        animBottomSegmentView.frame = bottomSegmentView.frame
-
-        self.animTopSegmentView = animTopSegmentView
-        self.animBottomSegmentView = animBottomSegmentView
-
-        addSubview(animTopSegmentView)
-        addSubview(animBottomSegmentView)
-
-        animTopSegmentView.set(character: topSegmentView.token)
-        animBottomSegmentView.set(character: token)
+        animTopSegmentView?.set(character: topSegmentView.token)
+        animBottomSegmentView?.set(character: token)
         topSegmentView.set(character: token)
 
-        animTopSegmentView.transform3D = skewedIdentityTransform
-        animBottomSegmentView.transform3D = segmentDownwardRotationTransform
+        animTopSegmentView?.transform3D = skewedIdentityTransform
+        animBottomSegmentView?.transform3D = segmentDownwardRotationTransform
         topSegmentView.shadow.alpha = .zero
         bottomSegmentView.shadow.alpha = .zero
 
@@ -329,28 +332,20 @@ open class SplitflapView: UIView {
             self.bottomSegmentView.shadow.alpha = .zero
             self.bottomSegmentView.set(character: token)
 
-            // Remove the animated views
-            self.animTopSegmentView?.removeFromSuperview()
-            self.animTopSegmentView = nil
-            self.animBottomSegmentView?.removeFromSuperview()
-            self.animBottomSegmentView = nil
-
-            // Clear the animators
-            self.primaryAnimator = nil
-            self.topSegmentAnimator = nil
-            self.bottomSegmentAnimator = nil
+            self.removeAnimatableSegmentViews()
+            self.clearAnimators()
         }
 
         topSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeIn, animations: {
-            animTopSegmentView.transform3D = segmentUpwardRotationTransform
-            animTopSegmentView.shadow.alpha = Constants.maxShadowAlpha / 2
+            self.animTopSegmentView?.transform3D = segmentUpwardRotationTransform
+            self.animTopSegmentView?.shadow.alpha = Constants.maxShadowAlpha / 2
         })
         topSegmentAnimator?.addCompletion { _ in
             self.bottomSegmentAnimator?.startAnimation()
         }
 
         bottomSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeOut, animations: {
-            animBottomSegmentView.transform3D = skewedIdentityTransform
+            self.animBottomSegmentView?.transform3D = skewedIdentityTransform
         })
 
         // Animate all the things that should start immediately
@@ -375,39 +370,16 @@ open class SplitflapView: UIView {
             return
         }
 
-        let animTopSegmentView = SplitflapSegmentView(position: .top)
-        let animBottomSegmentView = SplitflapSegmentView(position: .bottom)
+        animTopSegmentView = makeAnimatableSegmentView(position: .top)
+        animBottomSegmentView = makeAnimatableSegmentView(position: .bottom)
 
-        animTopSegmentView.backgroundColor = topSegmentView.backgroundColor
-        animTopSegmentView.textColor = topSegmentView.textColor
-        animTopSegmentView.flipPointColor = topSegmentView.flipPointColor
-        animTopSegmentView.cornerRadius = topSegmentView.cornerRadius
-        animTopSegmentView.flipPointHeightFactor = topSegmentView.flipPointHeightFactor
-
-        animBottomSegmentView.backgroundColor = bottomSegmentView.backgroundColor
-        animBottomSegmentView.textColor = bottomSegmentView.textColor
-        animBottomSegmentView.flipPointColor = bottomSegmentView.flipPointColor
-        animBottomSegmentView.cornerRadius = bottomSegmentView.cornerRadius
-        animBottomSegmentView.flipPointHeightFactor = bottomSegmentView.flipPointHeightFactor
-
-        animTopSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
-        animBottomSegmentView.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
-        animTopSegmentView.frame = topSegmentView.frame
-        animBottomSegmentView.frame = bottomSegmentView.frame
-
-        self.animTopSegmentView = animTopSegmentView
-        self.animBottomSegmentView = animBottomSegmentView
-
-        addSubview(animTopSegmentView)
-        addSubview(animBottomSegmentView)
-
-        animTopSegmentView.set(character: token)
-        animBottomSegmentView.set(character: bottomSegmentView.token)
+        animTopSegmentView?.set(character: token)
+        animBottomSegmentView?.set(character: bottomSegmentView.token)
         bottomSegmentView.set(character: token)
 
-        animTopSegmentView.transform3D = segmentUpwardRotationTransform
-        animTopSegmentView.shadow.alpha = Constants.maxShadowAlpha / 2
-        animBottomSegmentView.transform3D = skewedIdentityTransform
+        animTopSegmentView?.transform3D = segmentUpwardRotationTransform
+        animTopSegmentView?.shadow.alpha = Constants.maxShadowAlpha / 2
+        animBottomSegmentView?.transform3D = skewedIdentityTransform
         bottomSegmentView.shadow.alpha = Constants.maxShadowAlpha
 
         let flapAnimationDuration = duration / 2
@@ -420,25 +392,17 @@ open class SplitflapView: UIView {
             self.topSegmentView.set(character: token)
             self.bottomSegmentView.set(character: token)
 
-            // Remove the animated views
-            self.animTopSegmentView?.removeFromSuperview()
-            self.animTopSegmentView = nil
-            self.animBottomSegmentView?.removeFromSuperview()
-            self.animBottomSegmentView = nil
-
-            // Clear the animators
-            self.primaryAnimator = nil
-            self.topSegmentAnimator = nil
-            self.bottomSegmentAnimator = nil
+            self.removeAnimatableSegmentViews()
+            self.clearAnimators()
         }
 
         topSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeOut, animations: {
-            animTopSegmentView.transform3D = skewedIdentityTransform
-            animTopSegmentView.shadow.alpha = .zero
+            self.animTopSegmentView?.transform3D = skewedIdentityTransform
+            self.animTopSegmentView?.shadow.alpha = .zero
         })
 
         bottomSegmentAnimator = UIViewPropertyAnimator(duration: flapAnimationDuration, curve: .easeIn, animations: {
-            animBottomSegmentView.transform3D = segmentDownwardRotationTransform
+            self.animBottomSegmentView?.transform3D = segmentDownwardRotationTransform
         })
         bottomSegmentAnimator?.addCompletion { _ in
             self.topSegmentAnimator?.startAnimation()
@@ -453,5 +417,41 @@ open class SplitflapView: UIView {
         if let animator = primaryAnimator {
             animationProgress = animator.fractionComplete
         }
+    }
+
+    private func makeAnimatableSegmentView(position: SplitflapSegmentView.Position) -> SplitflapSegmentView {
+        let view = SplitflapSegmentView(position: position)
+        view.backgroundColor = splitflapBackgroundColor
+        view.digitLabel.textColor = textColor
+        view.mainLineView.backgroundColor = flipPointColor
+        view.cornerRadius = cornerRadius
+        view.flipPointHeightFactor = flipPointHeightFactor
+        view.font = font
+
+        switch position {
+        case .top:
+            view.layer.anchorPoint = CGPoint(x: 0.5, y: 1.0)
+            view.frame = topSegmentView.frame
+        case .bottom:
+            view.layer.anchorPoint = CGPoint(x: 0.5, y: 0)
+            view.frame = bottomSegmentView.frame
+        }
+
+        addSubview(view)
+
+        return view
+    }
+
+    private func removeAnimatableSegmentViews() {
+        animTopSegmentView?.removeFromSuperview()
+        animTopSegmentView = nil
+        animBottomSegmentView?.removeFromSuperview()
+        animBottomSegmentView = nil
+    }
+
+    private func clearAnimators() {
+        primaryAnimator = nil
+        topSegmentAnimator = nil
+        bottomSegmentAnimator = nil
     }
 }
