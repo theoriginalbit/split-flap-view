@@ -13,5 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Generate Xcodeproj
+      run: swift package generate-xcodeproj
     - name: Build
-      run: swift build -v
+      run: xcodebuild -sdk iphonesimulator | xcpretty
