@@ -147,7 +147,7 @@ open class SplitflapView: UIView {
         commonInit()
     }
 
-    public override func layoutSubviews() {
+    override public func layoutSubviews() {
         super.layoutSubviews()
 
         let segmentHeight = bounds.height / 2
